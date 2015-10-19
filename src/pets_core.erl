@@ -69,7 +69,10 @@ term_to_abstract(Mod, Key) ->
 			 erl_syntax:integer(2)),
 		   erl_syntax:arity_qualifier(
 			 erl_syntax:atom(lookup),
-			 erl_syntax:integer(2))])]),
+			 erl_syntax:integer(2)),
+		   erl_syntax:arity_qualifier(
+			 erl_syntax:atom(delete_all_objects),
+			 erl_syntax:integer(1))])]),
 	 erl_syntax:function(
 	   erl_syntax:atom(new),
 	   [erl_syntax:clause(
@@ -132,7 +135,26 @@ term_to_abstract(Mod, Key) ->
 								   [erl_syntax:variable("T1")])),
 		   erl_syntax:application(
 			 erl_syntax:module_qualifier(erl_syntax:atom("ets"), erl_syntax:atom("lookup")),
-			 [erl_syntax:variable("T2"), erl_syntax:variable("Key")])])])
+			 [erl_syntax:variable("T2"), erl_syntax:variable("Key")])])]),
+	 erl_syntax:function(
+	   erl_syntax:atom(delete_all_objects),
+	   [erl_syntax:clause(
+		  [erl_syntax:variable("T")],
+		  [],
+		  [erl_syntax:match_expr(erl_syntax:variable("T1"),
+                                 erl_syntax:infix_expr(
+                                   erl_syntax:string(Key),
+                                   erl_syntax:operator("++"),
+                                   erl_syntax:application(
+                                     erl_syntax:atom("atom_to_list"),
+                                     [erl_syntax:variable("T")]))),
+           erl_syntax:match_expr(erl_syntax:variable("T2"),
+                                 erl_syntax:application(
+                                   erl_syntax:atom("list_to_atom"),
+                                   [erl_syntax:variable("T1")])),
+           erl_syntax:application(
+             erl_syntax:module_qualifier(erl_syntax:atom("ets"), erl_syntax:atom("delete_all_objects")),
+             [erl_syntax:variable("T2")])])])
 	].
 
 
@@ -154,5 +176,7 @@ simple_test() ->
 	?assert(pets_pre:new(montest, [named_table]) == ver2montest),
 	?assert(pets_pre:insert(montest, {100, orange}) == true),
 	?assert(pets_core:init() == {module, pets}),
-	?assert(pets:lookup(montest, 100) == [{100, orange}]).
+	?assert(pets:lookup(montest, 100) == [{100, orange}]),
+	?assert(pets:delete_all_objects(montest) == true).
+
 -endif.
