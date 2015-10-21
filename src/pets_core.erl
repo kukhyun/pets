@@ -49,6 +49,8 @@ compile(Mod, Key) ->
 	Bin.
 
 forms(Mod, Key) ->
+	%%Ac = term_to_abstract(Mod, Key),
+	%%io:format("~s~n", [erl_prettypr:format(erl_syntax:form_list(Ac))]),
 	[erl_syntax:revert(X) || X <- term_to_abstract(Mod, Key)].
 
 term_to_abstract(Mod, Key) ->
@@ -72,6 +74,9 @@ term_to_abstract(Mod, Key) ->
 			 erl_syntax:integer(2)),
 		   erl_syntax:arity_qualifier(
 			 erl_syntax:atom(delete_all_objects),
+			 erl_syntax:integer(1)),
+		   erl_syntax:arity_qualifier(
+			 erl_syntax:atom(tab2list),
 			 erl_syntax:integer(1))])]),
 	 erl_syntax:function(
 	   erl_syntax:atom(new),
@@ -154,6 +159,25 @@ term_to_abstract(Mod, Key) ->
                                    [erl_syntax:variable("T1")])),
            erl_syntax:application(
              erl_syntax:module_qualifier(erl_syntax:atom("ets"), erl_syntax:atom("delete_all_objects")),
+             [erl_syntax:variable("T2")])])]),
+	 erl_syntax:function(
+	   erl_syntax:atom(tab2list),
+       [erl_syntax:clause(
+          [erl_syntax:variable("T")],
+          [],
+          [erl_syntax:match_expr(erl_syntax:variable("T1"),
+                                 erl_syntax:infix_expr(
+                                   erl_syntax:string(Key),
+                                   erl_syntax:operator("++"),
+                                   erl_syntax:application(
+                                     erl_syntax:atom("atom_to_list"),
+                                     [erl_syntax:variable("T")]))),
+           erl_syntax:match_expr(erl_syntax:variable("T2"),
+                                 erl_syntax:application(
+                                   erl_syntax:atom("list_to_atom"),
+                                   [erl_syntax:variable("T1")])),
+           erl_syntax:application(
+             erl_syntax:module_qualifier(erl_syntax:atom("ets"), erl_syntax:atom("tab2list")),
              [erl_syntax:variable("T2")])])])
 	].
 
@@ -177,6 +201,7 @@ simple_test() ->
 	?assert(pets_pre:insert(montest, {100, orange}) == true),
 	?assert(pets_core:init() == {module, pets}),
 	?assert(pets:lookup(montest, 100) == [{100, orange}]),
+	?assert(pets:tab2list(montest) == [{100,orange}]),
 	?assert(pets:delete_all_objects(montest) == true).
 
 -endif.
